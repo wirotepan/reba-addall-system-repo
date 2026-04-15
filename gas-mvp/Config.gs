@@ -3,7 +3,15 @@
 // ============================================================
 
 const CONFIG = {
-  SPREADSHEET_ID: '',   // ← วาง Spreadsheet ID ที่นี่หลัง Setup
+  // อ่านจาก Script Properties ของแต่ละ GAS project — ไม่ hardcode
+  // ตั้งค่าด้วย: File → Project settings → Script properties
+  // หรือรัน SetupService.setClientConfig(spreadsheetId, companyName)
+  get SPREADSHEET_ID() {
+    return PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID') || '';
+  },
+  get COMPANY_NAME() {
+    return PropertiesService.getScriptProperties().getProperty('COMPANY_NAME') || 'REBA System';
+  },
 
   SHEETS: {
     USERS:       'Users',

@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>แบบฟอร์มวิเคราะห์ความต้องการลูกค้า</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero">
+      <p class="eyebrow">Client Requirement Studio</p>
+      <h1>แบบฟอร์มสรุปความต้องการลูกค้าอย่างเป็นระบบ</h1>
+      <p class="subtitle">ใช้สำหรับเก็บข้อมูลโครงการเบื้องต้นอย่างมืออาชีพ เพื่อสร้างข้อมูลนำเข้าให้ agent วิเคราะห์ requirement, ออกแบบระบบ และวางแผน MVP ได้ทันที</p>
+      <div class="hero-notes">
+        <div class="note-card">
+          <strong>เหมาะสำหรับ</strong>
+          <span>Pre-sale, Discovery, BA Workshop, Solution Design</span>
+        </div>
+        <div class="note-card">
+          <strong>ผลลัพธ์ที่ได้</strong>
+          <span>JSON, Brief แบบ Markdown, Mock Final Output, และ AI Final Output</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <form id="intake-form" class="panel form-panel" novalidate>
+        <div class="panel-head">
+          <div>
+            <h2>แบบฟอร์มรับความต้องการ</h2>
+            <p class="panel-subtitle">กรอกข้อมูลเท่าที่ทราบ ระบบจะช่วยจัดรูปแบบและตรวจจุดสำคัญที่ยังขาด</p>
+          </div>
+          <div id="validation-badge" class="status-chip neutral">ยังไม่ได้ตรวจสอบ</div>
+        </div>
+
+        <section class="form-section form-tools">
+          <h3>จัดการโครงการ</h3>
+          <label>
+            <span>ชื่อไฟล์หรือชื่อโปรเจกต์สำหรับบันทึก</span>
+            <input name="project_storage_name" type="text" placeholder="เช่น project-procurement-2026">
+          </label>
+          <div class="actions compact-actions">
+            <button type="button" id="save-project">บันทึกลงเครื่องนี้</button>
+            <button type="button" id="load-project">โหลดจากชื่อที่ระบุ</button>
+            <button type="button" id="export-project">ส่งออกไฟล์โครงการ</button>
+            <label class="file-button">
+              <input id="import-project" type="file" accept="application/json">
+              <span>นำเข้าไฟล์โครงการ</span>
+            </label>
+          </div>
+          <div id="project-message" class="helper-text"></div>
+        </section>
+
+        <section class="form-section">
+          <h3>1. ข้อมูลโครงการและบริบทธุรกิจ</h3>
+          <label>
+            <span>ชื่อโครงการหรือชื่อระบบ</span>
+            <input name="project_name" type="text" placeholder="เช่น ระบบจัดซื้อภายในองค์กร">
+          </label>
+
+          <label>
+            <span>บริบทธุรกิจ</span>
+            <small>อธิบายประเภทธุรกิจ หน่วยงานที่เกี่ยวข้อง หรือสถานการณ์ปัจจุบันโดยย่อ</small>
+            <textarea name="business_context" rows="4" placeholder="ตัวอย่าง: บริษัทค้าปลีกมี 40 สาขา ใช้การขอซื้อผ่าน Excel และอีเมล ทำให้อนุมัติล่าช้าและตรวจสอบย้อนหลังได้ยาก"></textarea>
+          </label>
+
+          <label>
+            <span>ปัญหาหลักที่ต้องการแก้</span>
+            <small>ระบุอาการของปัญหา ผลกระทบ และสิ่งที่ทำให้เกิดความเร่งด่วน</small>
+            <textarea name="problem_statement" rows="4" placeholder="ตัวอย่าง: ขั้นตอนอนุมัติไม่ชัดเจน ผู้ขอไม่ทราบสถานะ เอกสารตกหล่น และทีมจัดซื้อต้องตามงานด้วยมือ"></textarea>
+          </label>
+
+          <label>
+            <span>เป้าหมายทางธุรกิจ</span>
+            <small>ระบุผลลัพธ์ที่คาดหวัง เช่น ลดเวลา เพิ่มความแม่นยำ เพิ่มการมองเห็น หรือควบคุมความเสี่ยง</small>
+            <textarea name="business_goal" rows="4" placeholder="ตัวอย่าง: ลดเวลาการอนุมัติจาก 3 วันเหลือภายในวันเดียว และเพิ่มความสามารถในการตรวจสอบย้อนหลัง"></textarea>
+          </label>
+
+          <label>
+            <span>ตัวชี้วัดความสำเร็จ</span>
+            <small>ใส่ทีละบรรทัด เช่น KPI, SLA, เป้าหมายเชิงปริมาณ</small>
+            <textarea name="success_metrics" rows="4" placeholder="ตัวอย่าง:
+80% ของคำขอได้รับการอนุมัติภายในวันทำการเดียว
+ลดงานติดตามด้วยมือของทีมจัดซื้อ 50%"></textarea>
+          </label>
+        </section>
+
+        <section class="form-section">
+          <h3>2. ผู้ใช้และผู้มีส่วนเกี่ยวข้อง</h3>
+          <label>
+            <span>กลุ่มผู้ใช้งาน</span>
+            <small>ใส่ทีละบรรทัดในรูปแบบ: บทบาท | หน้าที่หรือเป้าหมายหลัก</small>
+            <textarea name="users" rows="4" placeholder="ตัวอย่าง:
+พนักงานสาขา | สร้างคำขอซื้อและติดตามสถานะ
+ผู้จัดการสาขา | อนุมัติคำขอตามวงเงิน"></textarea>
+          </label>
+
+          <label>
+            <span>ผู้มีส่วนเกี่ยวข้องหลัก</span>
+            <small>ใส่ทีละบรรทัดในรูปแบบ: ชื่อหรือหน่วยงาน | บทบาท | ระดับอิทธิพล high/medium/low</small>
+            <textarea name="stakeholders" rows="4" placeholder="ตัวอย่าง:
+หัวหน้าจัดซื้อ | Business Owner | high
+ฝ่ายการเงิน | Approver | high"></textarea>
+          </label>
+        </section>
+
+        <section class="form-section">
+          <h3>3. กระบวนการปัจจุบันและปัญหา</h3>
+          <label>
+            <span>กระบวนการทำงานปัจจุบัน</span>
+            <small>ใส่ทีละบรรทัดตามลำดับขั้นตอน</small>
+            <textarea name="current_process" rows="5" placeholder="ตัวอย่าง:
+ผู้ขอกรอก Excel และส่งทางอีเมล
+ผู้จัดการตรวจสอบและตอบกลับทางอีเมล
+ทีมจัดซื้อรวบรวมรายการอนุมัติด้วยมือ"></textarea>
+          </label>
+
+          <label>
+            <span>Pain Points หรือข้อจำกัดของวิธีปัจจุบัน</span>
+            <small>ใส่ทีละบรรทัด</small>
+            <textarea name="pain_points" rows="4" placeholder="ตัวอย่าง:
+ไม่ทราบสถานะการอนุมัติ
+ข้อมูลกระจัดกระจายในหลายช่องทาง
+ตรวจสอบย้อนหลังได้ยาก"></textarea>
+          </label>
+        </section>
+
+        <section class="form-section">
+          <h3>4. ความสามารถที่ต้องการ</h3>
+          <label>
+            <span>ความสามารถที่จำเป็นต้องมีในระยะแรก</span>
+            <small>ใส่ทีละบรรทัด</small>
+            <textarea name="must_have_features" rows="5" placeholder="ตัวอย่าง:
+สร้างคำขอซื้อ
+อนุมัติหลายลำดับ
+ติดตามสถานะ
+บันทึกประวัติการอนุมัติ"></textarea>
+          </label>
+
+          <label>
+            <span>ความสามารถที่ควรมีในระยะถัดไป</span>
+            <small>ใส่ทีละบรรทัด</small>
+            <textarea name="nice_to_have_features" rows="4" placeholder="ตัวอย่าง:
+อนุมัติผ่านมือถือ
+Dashboard วิเคราะห์แนวโน้ม"></textarea>
+          </label>
+
+          <label>
+            <span>รายงานหรือ dashboard ที่ต้องการ</span>
+            <small>ใส่ทีละบรรทัด</small>
+            <textarea name="reports" rows="4" placeholder="ตัวอย่าง:
+รายงานคำขอค้างอนุมัติ
+รายงานระยะเวลาอนุมัติ"></textarea>
+          </label>
+        </section>
+
+        <section class="form-section">
+          <h3>5. ข้อมูล การเชื่อมต่อ และข้อจำกัด</h3>
+          <label>
+            <span>ระบบที่ต้องเชื่อมต่อ</span>
+            <small>ใส่ทีละบรรทัดในรูปแบบ: ชื่อระบบ | วัตถุประสงค์ | inbound/outbound/bidirectional</small>
+            <textarea name="integrations" rows="4" placeholder="ตัวอย่าง:
+ERP | ใช้ข้อมูลสินค้าและผู้ขาย | inbound
+Email Server | ส่งการแจ้งเตือน | outbound"></textarea>
+          </label>
+
+          <label>
+            <span>ข้อจำกัดหรือเงื่อนไขสำคัญ</span>
+            <small>เช่น เวลา งบประมาณ hosting security policy หรือข้อจำกัดภายในองค์กร</small>
+            <textarea name="constraints" rows="4" placeholder="ตัวอย่าง:
+ต้องเปิดใช้งาน MVP ภายใน 10 สัปดาห์
+ต้องติดตั้งภายในองค์กร
+กฎอนุมัติต้องปรับเปลี่ยนได้ตามหน่วยงาน"></textarea>
+          </label>
+        </section>
+
+        <section class="form-section">
+          <h3>6. ความคาดหวังด้านคุณภาพระบบ</h3>
+          <fieldset class="grid-two">
+            <label>
+              <span>จำนวนผู้ใช้งานโดยประมาณ</span>
+              <input name="expected_user_volume" type="text" placeholder="เช่น 400 ผู้ใช้ภายในองค์กร">
+            </label>
+            <label>
+              <span>ความคาดหวังด้านประสิทธิภาพ</span>
+              <input name="performance" type="text" placeholder="เช่น หน้าหลักควรตอบสนองภายใน 3 วินาที">
+            </label>
+            <label>
+              <span>ความพร้อมใช้งาน</span>
+              <input name="availability" type="text" placeholder="เช่น ต้องพร้อมใช้งานในวันและเวลาทำการ">
+            </label>
+            <label>
+              <span>การตรวจสอบย้อนหลัง</span>
+              <input name="auditability" type="text" placeholder="เช่น ต้องเก็บประวัติการกระทำทุกขั้นตอน">
+            </label>
+            <label>
+              <span>สิทธิ์การเข้าถึง</span>
+              <input name="access_control" type="text" placeholder="เช่น แยกสิทธิ์ผู้ขอ ผู้อนุมัติ และผู้ดูแลระบบ">
+            </label>
+            <label>
+              <span>ภาษาและการรองรับผู้ใช้</span>
+              <input name="localization" type="text" placeholder="เช่น รองรับภาษาไทยและอังกฤษ">
+            </label>
+          </fieldset>
+        </section>
+
+        <section class="form-section">
+          <h3>7. รูปแบบงานที่ต้องการส่งมอบ</h3>
+          <fieldset class="grid-two compact">
+            <label>
+              <span>แนวทางการส่งมอบ</span>
+              <select name="delivery_mode">
+                <option value="mvp_first">เริ่มจาก MVP ก่อน</option>
+                <option value="full_scope_first">ต้องการเห็นภาพเต็มก่อน</option>
+                <option value="unspecified">ยังไม่ระบุ</option>
+              </select>
+            </label>
+            <label class="checkbox-row"><input name="need_brd" type="checkbox" checked> <span>ต้องการเอกสาร BRD</span></label>
+            <label class="checkbox-row"><input name="need_srs" type="checkbox" checked> <span>ต้องการเอกสาร SRS</span></label>
+            <label class="checkbox-row"><input name="need_architecture_proposal" type="checkbox" checked> <span>ต้องการข้อเสนอด้าน Architecture</span></label>
+            <label class="checkbox-row"><input name="need_estimate_and_roadmap" type="checkbox" checked> <span>ต้องการ Estimate และ Roadmap</span></label>
+          </fieldset>
+        </section>
+
+        <section class="form-section">
+          <h3>8. เรื่องที่ยังไม่ชัดเจน</h3>
+          <label>
+            <span>ประเด็นที่ยังไม่แน่ใจหรืออยู่ระหว่างตัดสินใจ</span>
+            <small>ใส่ทีละบรรทัด</small>
+            <textarea name="unknowns" rows="4" placeholder="ตัวอย่าง:
+ยังไม่สรุปว่าฝ่ายการเงินต้องอนุมัติทุกกรณีหรือเฉพาะบางวงเงิน
+ยังไม่ยืนยันว่าต้องส่งข้อมูลคำขอที่อนุมัติแล้วเข้า ERP ในระยะ MVP หรือไม่"></textarea>
+          </label>
+        </section>
+
+        <section id="validation-panel" class="validation-panel hidden"></section>
+
+        <div class="actions">
+          <button type="button" id="load-sample">โหลดตัวอย่าง</button>
+          <button type="reset" id="clear-form">ล้างข้อมูล</button>
+          <button type="submit" class="primary">สร้างผลลัพธ์</button>
+        </div>
+      </form>
+
+      <section class="panel output-panel">
+        <div class="panel-head panel-head-output">
+          <div>
+            <h2>ผลลัพธ์สำหรับใช้งานต่อ</h2>
+            <p class="panel-subtitle">เลือกมุมมองที่ต้องการคัดลอกหรือดาวน์โหลดได้ทันที</p>
+          </div>
+        </div>
+
+        <div class="output-tabs">
+          <button type="button" class="tab active" data-tab="json">Input JSON</button>
+          <button type="button" class="tab" data-tab="markdown">Brief สำหรับ Agent</button>
+          <button type="button" class="tab" data-tab="final">Mock Final Output</button>
+          <button type="button" class="tab" data-tab="ai">AI Final Output</button>
+        </div>
+
+        <section class="ai-panel">
+          <div class="ai-grid">
+            <label>
+              <span>OpenAI API Key</span>
+              <input id="openai-api-key" type="password" placeholder="วาง API key ของคุณที่นี่">
+            </label>
+            <label>
+              <span>โมเดล</span>
+              <input id="openai-model" type="text" value="gpt-5.4" placeholder="เช่น gpt-5.4">
+            </label>
+          </div>
+          <label>
+            <span>คำสั่งเพิ่มเติมถึง AI</span>
+            <textarea id="ai-extra-instructions" rows="3" placeholder="เช่น ขอให้สรุปในเชิงผู้บริหาร, เน้น MVP, หรือเน้นความเสี่ยงด้าน integration"></textarea>
+          </label>
+          <div class="actions compact-actions">
+            <button type="button" id="generate-ai-output" class="primary">สร้าง AI Final Output</button>
+            <div id="ai-status" class="helper-text"></div>
+          </div>
+          <p class="panel-subtitle">หมายเหตุ: การเรียก AI จะทำจาก browser ของคุณโดยตรง API key จะไม่ถูกบันทึกอัตโนมัติ เว้นแต่คุณจะเลือกบันทึกเองในเครื่องภายหลัง</p>
+        </section>
+
+        <div class="output-actions">
+          <button type="button" id="copy-output">คัดลอกผลลัพธ์ปัจจุบัน</button>
+          <button type="button" id="download-json">ดาวน์โหลด JSON</button>
+          <button type="button" id="download-markdown">ดาวน์โหลด Markdown</button>
+          <button type="button" id="download-final">ดาวน์โหลด Final Mock</button>
+          <button type="button" id="download-ai">ดาวน์โหลด AI Output</button>
+        </div>
+
+        <pre id="json-output" class="output-pane active"></pre>
+        <pre id="markdown-output" class="output-pane"></pre>
+        <pre id="final-output" class="output-pane"></pre>
+        <pre id="ai-output" class="output-pane"></pre>
+      </section>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

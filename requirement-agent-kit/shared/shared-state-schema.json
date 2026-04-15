@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/requirement-system/shared-state-schema.json",
+  "title": "Requirement System Shared State",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "project_name": { "type": "string" },
+    "business_context": { "type": "string" },
+    "problem_statement": { "type": "string" },
+    "goals": { "type": "array", "items": { "type": "string" } },
+    "stakeholders": { "type": "array", "items": { "$ref": "#/$defs/nameRoleItem" } },
+    "user_roles": { "type": "array", "items": { "$ref": "#/$defs/nameRoleItem" } },
+    "current_process": { "type": "array", "items": { "type": "string" } },
+    "requested_capabilities": { "type": "array", "items": { "type": "string" } },
+    "constraints": { "type": "array", "items": { "type": "string" } },
+    "integrations": { "type": "array", "items": { "$ref": "#/$defs/integrationItem" } },
+    "functional_requirements": { "type": "array", "items": { "$ref": "#/$defs/functionalRequirement" } },
+    "non_functional_requirements": { "type": "array", "items": { "$ref": "#/$defs/nfrItem" } },
+    "business_rules": { "type": "array", "items": { "type": "string" } },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "open_questions": { "type": "array", "items": { "type": "string" } },
+    "solution_options": { "type": "array", "items": { "$ref": "#/$defs/solutionOption" } },
+    "recommended_solution": { "$ref": "#/$defs/recommendedSolution" },
+    "risks": { "type": "array", "items": { "$ref": "#/$defs/riskItem" } },
+    "dependencies": { "type": "array", "items": { "type": "string" } },
+    "mvp_scope": { "type": "array", "items": { "type": "string" } },
+    "roadmap": { "type": "array", "items": { "$ref": "#/$defs/roadmapPhase" } },
+    "estimate_notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "nameRoleItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "integrationItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "system_name": { "type": "string" },
+        "purpose": { "type": "string" },
+        "direction": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "functionalRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "actor": { "type": "string" },
+        "description": { "type": "string" },
+        "priority": { "type": "string", "enum": ["must", "should", "could", "won_t_now", "unknown"] },
+        "acceptance_criteria": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "nfrItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "category": { "type": "string" },
+        "requirement": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "solutionOption": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "summary": { "type": "string" },
+        "strengths": { "type": "array", "items": { "type": "string" } },
+        "trade_offs": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "recommendedSolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "rationale": { "type": "string" },
+        "components": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "riskItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+        "item": { "type": "string" },
+        "impact": { "type": "string" },
+        "mitigation": { "type": "string" }
+      }
+    },
+    "roadmapPhase": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "phase": { "type": "string" },
+        "goal": { "type": "string" },
+        "deliverables": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

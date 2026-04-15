@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/requirement-system/output-schema.json",
+  "title": "Requirement System Final Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "executive_summary",
+    "business_context",
+    "problem_statement",
+    "functional_requirements",
+    "recommended_solution",
+    "mvp_scope"
+  ],
+  "properties": {
+    "executive_summary": { "type": "string" },
+    "business_context": { "type": "string" },
+    "problem_statement": { "type": "string" },
+    "goals_and_success_metrics": { "type": "array", "items": { "type": "string" } },
+    "stakeholders_and_user_roles": { "type": "array", "items": { "type": "string" } },
+    "requirement_completeness_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "readiness_level": { "type": "string", "enum": ["low", "medium", "high"] },
+        "missing_areas": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "functional_requirements": { "type": "array", "items": { "$ref": "shared-state-schema.json#/$defs/functionalRequirement" } },
+    "non_functional_requirements": { "type": "array", "items": { "$ref": "shared-state-schema.json#/$defs/nfrItem" } },
+    "business_rules": { "type": "array", "items": { "type": "string" } },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "open_questions": { "type": "array", "items": { "type": "string" } },
+    "solution_options": { "type": "array", "items": { "$ref": "shared-state-schema.json#/$defs/solutionOption" } },
+    "recommended_solution": { "$ref": "shared-state-schema.json#/$defs/recommendedSolution" },
+    "architecture_summary": { "type": "array", "items": { "type": "string" } },
+    "data_and_integration_summary": { "type": "array", "items": { "type": "string" } },
+    "risks_and_dependencies": { "type": "array", "items": { "$ref": "shared-state-schema.json#/$defs/riskItem" } },
+    "mvp_scope": { "type": "array", "items": { "type": "string" } },
+    "delivery_roadmap": { "type": "array", "items": { "$ref": "shared-state-schema.json#/$defs/roadmapPhase" } },
+    "estimate_notes": { "type": "array", "items": { "type": "string" } },
+    "next_actions": { "type": "array", "items": { "type": "string" } }
+  }
+}

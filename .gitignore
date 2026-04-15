@@ -2,6 +2,9 @@ node_modules/
 
 # clasp OAuth token — ห้าม commit เด็ดขาด
 .clasprc.json
+
+# clasp active deployment target (สร้างโดย deploy.js อัตโนมัติ)
+.clasp.json
 gas-mvp/.clasp.json
 
 # OS

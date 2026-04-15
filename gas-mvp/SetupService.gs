@@ -102,10 +102,44 @@ const SetupService = (() => {
     }
   }
 
+  // ── Per-client config (call once after first clasp push) ──
+
+  /**
+   * ตั้งค่า per-client config ใน Script Properties
+   * เรียกได้จาก Apps Script editor หรือจาก deploy.js
+   * @param {string} spreadsheetId  — Google Spreadsheet ID ของลูกค้า
+   * @param {string} companyName    — ชื่อบริษัทลูกค้า
+   */
+  function setClientConfig(spreadsheetId, companyName) {
+    if (!spreadsheetId) throw new Error('spreadsheetId is required');
+    PropertiesService.getScriptProperties().setProperties({
+      SPREADSHEET_ID: spreadsheetId,
+      COMPANY_NAME:   companyName || 'REBA System',
+    });
+    Logger.log('✅ Client config saved: ' + companyName + ' | ' + spreadsheetId);
+  }
+
+  /** อ่าน config ปัจจุบัน (สำหรับตรวจสอบ) */
+  function getClientConfig() {
+    const p = PropertiesService.getScriptProperties().getProperties();
+    return {
+      spreadsheetId: p.SPREADSHEET_ID || '(ยังไม่ตั้งค่า)',
+      companyName:   p.COMPANY_NAME   || '(ยังไม่ตั้งค่า)',
+    };
+  }
+
   function _newId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   }
 
-  return { initAll };
+  return { initAll, setClientConfig, getClientConfig };
 
 })();
+
+// ── Exposed wrappers (เรียกจาก Apps Script editor ได้) ─────
+function runSetClientConfig(spreadsheetId, companyName) {
+  SetupService.setClientConfig(spreadsheetId, companyName);
+}
+function runGetClientConfig() {
+  Logger.log(JSON.stringify(SetupService.getClientConfig(), null, 2));
+}
