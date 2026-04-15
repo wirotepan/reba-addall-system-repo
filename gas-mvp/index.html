@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REBA Risk Assessment</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --sidebar-w: 240px;
+  --header-h:  56px;
+  --primary:   #1a73e8;
+}
+body { font-family: 'Segoe UI', sans-serif; background: #f4f6fb; }
+#sidebar {
+  position: fixed; top: 0; left: 0; width: var(--sidebar-w);
+  height: 100vh; background: #1e2a3b; color: #fff;
+  display: flex; flex-direction: column; z-index: 100;
+  transition: transform .25s;
+}
+#sidebar .brand { padding: 16px; font-size: 1.1rem; font-weight: 700;
+  border-bottom: 1px solid rgba(255,255,255,.1); }
+#sidebar .nav-link { color: rgba(255,255,255,.75); padding: 10px 16px;
+  display: flex; align-items: center; gap: 10px; border-radius: 6px;
+  margin: 2px 8px; transition: background .15s; font-size: .9rem; }
+#sidebar .nav-link:hover, #sidebar .nav-link.active {
+  background: rgba(255,255,255,.12); color: #fff; text-decoration: none; }
+#main { margin-left: var(--sidebar-w); min-height: 100vh; }
+#topbar { height: var(--header-h); background: #fff; border-bottom: 1px solid #e0e0e0;
+  display: flex; align-items: center; padding: 0 24px; justify-content: space-between;
+  position: sticky; top: 0; z-index: 99; }
+#content { padding: 24px; }
+.page { display: none; }
+.page.active { display: block; }
+/* Wizard */
+.wizard-step { display: none; }
+.wizard-step.active { display: block; }
+.step-indicator { display: flex; gap: 0; margin-bottom: 24px; }
+.step-dot { flex: 1; padding: 8px 4px; text-align: center; font-size: .8rem;
+  background: #e9ecef; border-right: 1px solid #fff; color: #6c757d; }
+.step-dot.done { background: #d1e7dd; color: #0a3622; }
+.step-dot.active { background: var(--primary); color: #fff; font-weight: 600; }
+/* Risk badges */
+.risk-negligible { background: #d1e7dd; color: #0a3622; }
+.risk-low        { background: #cfe2ff; color: #052c65; }
+.risk-medium     { background: #fff3cd; color: #664d03; }
+.risk-high       { background: #ffe0cc; color: #8b3a00; }
+.risk-very_high  { background: #f8d7da; color: #58151c; }
+.risk-badge { padding: 4px 10px; border-radius: 20px; font-size: .8rem; font-weight: 600; }
+/* Score display */
+.score-box { text-align: center; padding: 12px; border-radius: 8px; background: #f8f9fa; }
+.score-box .score-num { font-size: 2rem; font-weight: 700; }
+.score-box .score-label { font-size: .75rem; color: #6c757d; }
+/* Cards */
+.stat-card { background: #fff; border-radius: 12px; padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+/* Table */
+.table-hover tbody tr:hover { background: #f0f4ff; cursor: pointer; }
+/* Posture option card */
+.posture-opt { border: 2px solid #dee2e6; border-radius: 8px; padding: 10px 14px;
+  margin-bottom: 6px; cursor: pointer; transition: border-color .15s; }
+.posture-opt:hover { border-color: var(--primary); }
+.posture-opt input[type=radio]:checked ~ .opt-label { font-weight: 600; }
+.posture-opt.selected { border-color: var(--primary); background: #e8f0fe; }
+/* Loading */
+.spinner-overlay { position: fixed; inset: 0; background: rgba(255,255,255,.7);
+  display: flex; align-items: center; justify-content: center; z-index: 9999; }
+@media (max-width: 768px) {
+  #sidebar { transform: translateX(-100%); }
+  #sidebar.open { transform: translateX(0); }
+  #main { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Spinner ── -->
+<div class="spinner-overlay" id="spinner">
+  <div class="spinner-border text-primary" style="width:3rem;height:3rem"></div>
+</div>
+
+<!-- ── Sidebar ── -->
+<div id="sidebar">
+  <div class="brand"><i class="bi bi-shield-check me-2"></i>REBA System</div>
+  <nav class="flex-grow-1 py-2">
+    <a class="nav-link active" href="#" data-page="dashboard">
+      <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+    <a class="nav-link" href="#" data-page="assessments">
+      <i class="bi bi-clipboard-data"></i> การประเมินทั้งหมด
+    </a>
+    <a class="nav-link" href="#" data-page="new-assessment">
+      <i class="bi bi-plus-circle"></i> สร้างการประเมิน
+    </a>
+    <a class="nav-link" href="#" data-page="action-plans">
+      <i class="bi bi-list-check"></i> Action Plans
+    </a>
+  </nav>
+  <div class="p-3 border-top border-secondary">
+    <small id="user-info" class="text-white-50"></small>
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<div id="main">
+  <div id="topbar">
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-sm d-md-none" onclick="toggleSidebar()">
+        <i class="bi bi-list fs-5"></i>
+      </button>
+      <span id="page-title" class="fw-semibold">Dashboard</span>
+    </div>
+    <div id="topbar-actions"></div>
+  </div>
+
+  <div id="content">
+
+    <!-- ════════════════════════════════════════
+         PAGE: Dashboard
+    ════════════════════════════════════════ -->
+    <div class="page active" id="page-dashboard">
+      <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3">
+          <div class="stat-card text-center">
+            <div class="fs-2 fw-bold text-primary" id="stat-total">—</div>
+            <div class="text-muted small">การประเมินทั้งหมด</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card text-center">
+            <div class="fs-2 fw-bold text-danger" id="stat-high">—</div>
+            <div class="text-muted small">ความเสี่ยงสูง/สูงมาก</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card text-center">
+            <div class="fs-2 fw-bold text-warning" id="stat-open-plans">—</div>
+            <div class="text-muted small">Action Plan ค้างอยู่</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card text-center">
+            <div class="fs-2 fw-bold text-danger" id="stat-overdue">—</div>
+            <div class="text-muted small">Action Plan เกินกำหนด</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-5">
+          <div class="stat-card">
+            <h6 class="mb-3">กระจายระดับความเสี่ยง</h6>
+            <canvas id="chart-risk" height="220"></canvas>
+          </div>
+        </div>
+        <div class="col-md-7">
+          <div class="stat-card">
+            <h6 class="mb-3">แนวโน้มรายเดือน (6 เดือนล่าสุด)</h6>
+            <canvas id="chart-trend" height="220"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="stat-card">
+            <h6 class="mb-3">งาน/ตำแหน่งที่มีความเสี่ยงสูงสุด</h6>
+            <div id="top-jobs-list"></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="stat-card">
+            <h6 class="mb-3">การประเมินล่าสุด</h6>
+            <div id="recent-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         PAGE: Assessment List
+    ════════════════════════════════════════ -->
+    <div class="page" id="page-assessments">
+      <div class="d-flex gap-2 mb-3 flex-wrap">
+        <input id="search-input" class="form-control" style="max-width:260px"
+               placeholder="ค้นหางาน / แผนก / พนักงาน">
+        <select id="filter-risk" class="form-select" style="max-width:180px">
+          <option value="">ระดับความเสี่ยงทั้งหมด</option>
+          <option value="negligible">ไม่มีความเสี่ยง</option>
+          <option value="low">ต่ำ</option>
+          <option value="medium">ปานกลาง</option>
+          <option value="high">สูง</option>
+          <option value="very_high">สูงมาก</option>
+        </select>
+        <button class="btn btn-primary" onclick="navTo('new-assessment')">
+          <i class="bi bi-plus-lg me-1"></i>สร้างการประเมินใหม่
+        </button>
+      </div>
+      <div class="stat-card p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0" id="assessments-table">
+            <thead class="table-light">
+              <tr>
+                <th>วันที่</th><th>งาน / Task</th><th>แผนก</th>
+                <th>คะแนน</th><th>ระดับความเสี่ยง</th>
+                <th>Action Plans</th><th>สถานะ</th>
+              </tr>
+            </thead>
+            <tbody id="assessments-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         PAGE: New/Edit Assessment Wizard
+    ════════════════════════════════════════ -->
+    <div class="page" id="page-new-assessment">
+      <div class="stat-card" style="max-width:760px;margin:auto">
+        <!-- Step indicator -->
+        <div class="step-indicator rounded overflow-hidden mb-4" id="step-indicator"></div>
+
+        <form id="assessment-form" onsubmit="return false">
+          <input type="hidden" id="f-id">
+          <input type="hidden" id="f-parentId">
+
+          <!-- STEP 1: Basic Info -->
+          <div class="wizard-step active" data-step="1">
+            <h5 class="mb-3"><i class="bi bi-info-circle me-2 text-primary"></i>ข้อมูลพื้นฐาน</h5>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">งาน / Task <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="f-jobTask" required placeholder="เช่น ยกกล่องสินค้า">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">แผนก</label>
+                <input type="text" class="form-control" id="f-department" placeholder="เช่น แผนกผลิต">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">ชื่อพนักงาน / กลุ่มงาน</label>
+                <input type="text" class="form-control" id="f-workerName" placeholder="เช่น กลุ่ม A">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">วันที่ประเมิน</label>
+                <input type="date" class="form-control" id="f-assessmentDate">
+              </div>
+              <div class="col-12">
+                <label class="form-label">หมายเหตุ / บริบทการทำงาน</label>
+                <textarea class="form-control" id="f-notes" rows="2"
+                  placeholder="อธิบายสภาพแวดล้อมหรือบริบทการทำงาน"></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label"><i class="bi bi-image me-1"></i>URL รูปภาพประกอบ (คั่นด้วย ,)</label>
+                <input type="text" class="form-control" id="f-imageUrls"
+                  placeholder="https://drive.google.com/... , https://...">
+                <div class="form-text">แนบลิงก์ Google Drive หรือรูปภาพที่แสดงท่าทางการทำงาน</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2: Group A — Neck & Trunk & Legs -->
+          <div class="wizard-step" data-step="2">
+            <h5 class="mb-1"><i class="bi bi-person-standing me-2 text-primary"></i>Group A — ลำตัว / คอ / ขา</h5>
+            <p class="text-muted small mb-3">ประเมินท่าทางของลำตัว คอ และขาในขณะทำงาน</p>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">คอ (Neck)</label>
+              <div id="opts-neck"></div>
+              <div class="mt-1">
+                <label class="form-label small">ปรับแต่ง</label>
+                <div id="opts-neckMod"></div>
+              </div>
+            </div>
+            <hr>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">ลำตัว (Trunk)</label>
+              <div id="opts-trunk"></div>
+              <div class="mt-1">
+                <label class="form-label small">ปรับแต่ง</label>
+                <div id="opts-trunkMod"></div>
+              </div>
+            </div>
+            <hr>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">ขา (Legs)</label>
+              <div id="opts-legs"></div>
+              <div class="mt-1">
+                <label class="form-label small">การงอเข่า</label>
+                <div id="opts-legsMod"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3: Load/Force -->
+          <div class="wizard-step" data-step="3">
+            <h5 class="mb-1"><i class="bi bi-boxes me-2 text-primary"></i>น้ำหนัก / แรงที่ใช้ (Load / Force)</h5>
+            <p class="text-muted small mb-3">ระบุน้ำหนักที่ยก/ถือ หรือแรงที่ออกแรงดัน/ดึง</p>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">น้ำหนัก / แรง</label>
+              <div id="opts-load"></div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">ลักษณะแรง</label>
+              <div id="opts-loadShock"></div>
+            </div>
+
+            <!-- Live Score A preview -->
+            <div class="alert alert-info mt-3 p-2">
+              <small>คะแนนกลุ่ม A (preview): <strong id="preview-scoreA">—</strong></small>
+            </div>
+          </div>
+
+          <!-- STEP 4: Group B — Upper Arm / Lower Arm / Wrist -->
+          <div class="wizard-step" data-step="4">
+            <h5 class="mb-1"><i class="bi bi-hand-index-thumb me-2 text-primary"></i>Group B — แขนบน / แขนล่าง / ข้อมือ</h5>
+            <p class="text-muted small mb-3">ประเมินท่าทางของแขนและข้อมือในขณะทำงาน</p>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">แขนบน (Upper Arm)</label>
+              <div id="opts-upperArm"></div>
+              <div class="mt-1">
+                <label class="form-label small">ปรับแต่ง</label>
+                <div id="opts-upperArmMod"></div>
+              </div>
+            </div>
+            <hr>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">แขนล่าง (Lower Arm)</label>
+              <div id="opts-lowerArm"></div>
+            </div>
+            <hr>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">ข้อมือ (Wrist)</label>
+              <div id="opts-wrist"></div>
+              <div class="mt-1">
+                <label class="form-label small">ปรับแต่ง</label>
+                <div id="opts-wristMod"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 5: Coupling + Activity -->
+          <div class="wizard-step" data-step="5">
+            <h5 class="mb-1"><i class="bi bi-grip-horizontal me-2 text-primary"></i>การจับยึด & กิจกรรม</h5>
+            <p class="text-muted small mb-3">ประเมินคุณภาพการจับยึดและลักษณะกิจกรรม</p>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">การจับยึด (Coupling)</label>
+              <div id="opts-coupling"></div>
+            </div>
+            <hr>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">ปัจจัยกิจกรรม (Activity — เลือกได้หลายข้อ)</label>
+              <div id="opts-activity-checks"></div>
+            </div>
+
+            <!-- Live score B preview -->
+            <div class="alert alert-info mt-3 p-2">
+              <small>คะแนนกลุ่ม B (preview): <strong id="preview-scoreB">—</strong></small>
+            </div>
+          </div>
+
+          <!-- STEP 6: Result -->
+          <div class="wizard-step" data-step="6">
+            <h5 class="mb-3"><i class="bi bi-bar-chart-fill me-2 text-primary"></i>ผลการประเมิน REBA</h5>
+            <div id="result-panel"></div>
+          </div>
+
+        </form><!-- /assessment-form -->
+
+        <!-- Wizard navigation -->
+        <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+          <button class="btn btn-outline-secondary" id="btn-prev" onclick="wizardPrev()" style="display:none">
+            <i class="bi bi-chevron-left me-1"></i>ย้อนกลับ
+          </button>
+          <div class="ms-auto d-flex gap-2">
+            <button class="btn btn-outline-secondary" onclick="wizardSaveDraft()" id="btn-draft">
+              <i class="bi bi-floppy me-1"></i>บันทึก Draft
+            </button>
+            <button class="btn btn-primary" id="btn-next" onclick="wizardNext()">
+              ถัดไป<i class="bi bi-chevron-right ms-1"></i>
+            </button>
+            <button class="btn btn-success" id="btn-submit" onclick="wizardSubmit()" style="display:none">
+              <i class="bi bi-check-circle me-1"></i>ยืนยันและบันทึก
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         PAGE: Assessment Detail
+    ════════════════════════════════════════ -->
+    <div class="page" id="page-detail">
+      <div id="detail-content"></div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         PAGE: Action Plans
+    ════════════════════════════════════════ -->
+    <div class="page" id="page-action-plans">
+      <div class="stat-card p-0">
+        <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">Action Plans ทั้งหมด</h6>
+          <select id="filter-plan-status" class="form-select form-select-sm" style="width:auto"
+                  onchange="loadAllPlans()">
+            <option value="">ทุกสถานะ</option>
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>งาน / Assessment</th><th>มาตรการ</th>
+                <th>ผู้รับผิดชอบ</th><th>กำหนดเสร็จ</th><th>สถานะ</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="plans-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ── Action Plan Modal ── -->
+<div class="modal fade" id="planModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="planModalTitle">เพิ่ม Action Plan</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="pm-id">
+        <input type="hidden" id="pm-assessmentId">
+        <div class="mb-3">
+          <label class="form-label">ประเภทมาตรการ (Hierarchy of Controls)</label>
+          <select class="form-select" id="pm-controlType">
+            <option value="elimination">1. Elimination — ขจัดอันตราย</option>
+            <option value="substitution">2. Substitution — ทดแทน</option>
+            <option value="engineering">3. Engineering Controls — วิศวกรรม</option>
+            <option value="admin" selected>4. Administrative Controls — บริหารจัดการ</option>
+            <option value="ppe">5. PPE — อุปกรณ์ป้องกัน</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">รายละเอียดมาตรการ <span class="text-danger">*</span></label>
+          <textarea class="form-control" id="pm-description" rows="3" required></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">ผู้รับผิดชอบ</label>
+          <input type="text" class="form-control" id="pm-responsible">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">กำหนดเสร็จ</label>
+          <input type="date" class="form-control" id="pm-dueDate">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">หมายเหตุ</label>
+          <input type="text" class="form-control" id="pm-notes">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="savePlan()">บันทึก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="toast" class="toast align-items-center border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body" id="toast-msg"></div>
+      <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+// App State
+// ═══════════════════════════════════════════════════════
+const State = {
+  user:        <?= userJson ?>,
+  postures:    null,
+  currentPage: 'dashboard',
+  wizardStep:  1,
+  wizardTotal: 6,
+  assessment:  {},   // current form data
+  charts:      {},
+};
+
+// ── REBA Tables (client-side — mirrors RebaEngine.gs) ──
+const REBA_TABLE_A = [
+  [[1,2,3,4],[1,2,3,4],[3,3,5,6]],
+  [[2,3,4,5],[3,4,5,6],[4,5,6,7]],
+  [[2,4,5,6],[4,5,6,7],[5,6,7,8]],
+  [[3,5,6,7],[5,6,7,8],[6,7,8,9]],
+  [[4,6,7,8],[6,7,8,9],[7,8,9,9]],
+];
+const REBA_TABLE_B = [
+  [[1,2,2],[1,2,3]],[[1,2,3],[2,3,4]],[[3,4,5],[4,5,5]],
+  [[4,5,5],[5,6,7]],[[6,7,8],[7,8,8]],[[7,8,9],[8,9,9]],
+];
+const REBA_TABLE_C = [
+  [ 1, 1, 1, 2, 3, 3, 4, 5, 6, 7, 7, 7],
+  [ 1, 2, 2, 3, 4, 4, 5, 6, 6, 7, 7, 8],
+  [ 2, 3, 3, 3, 4, 5, 6, 7, 7, 8, 8, 8],
+  [ 3, 4, 4, 4, 5, 6, 7, 8, 8, 9, 9, 9],
+  [ 4, 4, 4, 5, 6, 7, 8, 8, 9, 9, 9, 9],
+  [ 6, 6, 6, 7, 8, 8, 9, 9,10,10,10,10],
+  [ 7, 7, 7, 8, 9, 9, 9,10,10,11,11,11],
+  [ 8, 8, 8, 9,10,10,10,10,10,11,11,11],
+  [ 9, 9, 9,10,10,10,11,11,11,12,12,12],
+  [10,10,10,11,11,11,11,12,12,12,12,12],
+  [11,11,11,11,12,12,12,12,12,12,12,12],
+  [12,12,12,12,12,12,12,12,12,12,12,12],
+];
+
+const RISK_CONFIG = {
+  negligible:{ label:'ไม่มีความเสี่ยง',     color:'#28a745' },
+  low:       { label:'ความเสี่ยงต่ำ',        color:'#8bc34a' },
+  medium:    { label:'ความเสี่ยงปานกลาง',   color:'#ffc107' },
+  high:      { label:'ความเสี่ยงสูง',        color:'#fd7e14' },
+  very_high: { label:'ความเสี่ยงสูงมาก',    color:'#dc3545' },
+};
+
+function clientCalcReba(d) {
+  const neck   = clamp((+d.neck||1)   + (+d.neckMod||0),   1, 3);
+  const trunk  = clamp((+d.trunk||1)  + (+d.trunkMod||0),  1, 5);
+  const legs   = clamp((+d.legs||1)   + (+d.legsMod||0),   1, 4);
+  const rawA   = REBA_TABLE_A[trunk-1][neck-1][legs-1];
+  const scoreA = clamp(rawA + (+d.loadScore||0) + (+d.loadShock||0), 1, 12);
+
+  const ua   = clamp((+d.upperArm||1) + (+d.upperArmMod||0), 1, 6);
+  const la   = clamp(+d.lowerArm||1, 1, 2);
+  const wr   = clamp((+d.wrist||1)    + (+d.wristMod||0),    1, 3);
+  const rawB  = REBA_TABLE_B[ua-1][la-1][wr-1];
+  const scoreB = clamp(rawB + (+d.couplingScore||0), 1, 12);
+
+  const scoreC     = REBA_TABLE_C[scoreA-1][scoreB-1];
+  const finalScore = clamp(scoreC + (+d.activityScore||0), 1, 15);
+  const riskLevel  = getRiskLevel(finalScore);
+  return { scoreA, scoreB, scoreC, finalScore, riskLevel };
+}
+
+function getRiskLevel(s) {
+  if (s<=1)  return 'negligible';
+  if (s<=3)  return 'low';
+  if (s<=7)  return 'medium';
+  if (s<=10) return 'high';
+  return 'very_high';
+}
+function clamp(v,mn,mx){ return Math.max(mn,Math.min(mx,v)); }
+
+// ═══════════════════════════════════════════════════════
+// Navigation
+// ═══════════════════════════════════════════════════════
+function navTo(page, params) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#sidebar .nav-link').forEach(a => a.classList.remove('active'));
+
+  const el = document.getElementById('page-' + page);
+  if (el) el.classList.add('active');
+
+  const link = document.querySelector(`[data-page="${page}"]`);
+  if (link) link.classList.add('active');
+
+  State.currentPage = page;
+
+  const titles = {
+    dashboard: 'Dashboard', assessments: 'การประเมินทั้งหมด',
+    'new-assessment': 'สร้างการประเมิน', detail: 'รายละเอียดการประเมิน',
+    'action-plans': 'Action Plans',
+  };
+  document.getElementById('page-title').textContent = titles[page] || page;
+  document.getElementById('topbar-actions').innerHTML = '';
+
+  if (page === 'dashboard')       loadDashboard();
+  else if (page === 'assessments') loadAssessments();
+  else if (page === 'new-assessment') {
+    initWizard(params);
+  }
+  else if (page === 'detail' && params) loadDetail(params.id);
+  else if (page === 'action-plans') loadAllPlans();
+}
+
+document.querySelectorAll('#sidebar .nav-link').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    navTo(a.dataset.page);
+  });
+});
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ═══════════════════════════════════════════════════════
+// Posture options — rendered from server data
+// ═══════════════════════════════════════════════════════
+function renderPostureOptions(containerId, options, fieldName, currentVal) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = options.map(opt => `
+    <label class="posture-opt d-flex align-items-center gap-2 ${+currentVal===+opt.value?'selected':''}">
+      <input type="radio" name="${fieldName}" value="${opt.value}"
+             ${+currentVal===+opt.value?'checked':''}
+             onchange="onPostureChange('${fieldName}',this.value,this.closest('.posture-opt'))">
+      <span class="opt-label">${opt.label}</span>
+    </label>
+  `).join('');
+}
+
+function onPostureChange(field, val, el) {
+  State.assessment[field] = +val;
+  el.closest('div').querySelectorAll('.posture-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  updateLivePreviews();
+}
+
+function updateLivePreviews() {
+  const r = clientCalcReba(State.assessment);
+  const pA = document.getElementById('preview-scoreA');
+  const pB = document.getElementById('preview-scoreB');
+  if (pA) pA.textContent = r.scoreA;
+  if (pB) pB.textContent = r.scoreB;
+}
+
+function renderActivityChecks(postures) {
+  const el = document.getElementById('opts-activity-checks');
+  if (!el || !postures) return;
+  el.innerHTML = postures.activity.map(opt => `
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" value="${opt.value}"
+             id="act-${opt.value}"
+             onchange="calcActivityScore()">
+      <label class="form-check-label" for="act-${opt.value}">${opt.label}</label>
+    </div>
+  `).join('');
+}
+
+function calcActivityScore() {
+  let total = 0;
+  document.querySelectorAll('#opts-activity-checks input:checked').forEach(cb => {
+    total += (+cb.value || 0);
+  });
+  State.assessment.activityScore = Math.min(3, total);
+  updateLivePreviews();
+}
+
+// ═══════════════════════════════════════════════════════
+// Wizard
+// ═══════════════════════════════════════════════════════
+const STEP_LABELS = [
+  'ข้อมูลพื้นฐาน','Group A: ลำตัว/คอ/ขา',
+  'น้ำหนัก/แรง','Group B: แขน/ข้อมือ',
+  'จับยึด & กิจกรรม','ผลการประเมิน'
+];
+
+function initWizard(params) {
+  State.wizardStep = 1;
+  State.assessment = { neck:1,neckMod:0,trunk:1,trunkMod:0,legs:1,legsMod:0,
+    loadScore:0,loadShock:0,upperArm:1,upperArmMod:0,lowerArm:1,
+    wrist:1,wristMod:0,couplingScore:0,activityScore:0 };
+
+  // Pre-fill if re-assessment
+  if (params && params.parentId) {
+    document.getElementById('f-parentId').value = params.parentId;
+    State.assessment.parentId = params.parentId;
+  }
+  if (params && params.prefill) {
+    Object.assign(State.assessment, params.prefill);
+  }
+
+  // Set default date
+  document.getElementById('f-assessmentDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('f-id').value = params && params.id ? params.id : '';
+
+  updateStepIndicator();
+  renderWizardStep(1);
+}
+
+function updateStepIndicator() {
+  const ind = document.getElementById('step-indicator');
+  ind.innerHTML = STEP_LABELS.map((l, i) => {
+    const n = i + 1;
+    let cls = n < State.wizardStep ? 'done' : n === State.wizardStep ? 'active' : '';
+    return `<div class="step-dot ${cls}">
+      ${n < State.wizardStep ? '<i class="bi bi-check"></i> ' : n + '. '}${l}
+    </div>`;
+  }).join('');
+}
+
+function renderWizardStep(step) {
+  document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+  const el = document.querySelector(`.wizard-step[data-step="${step}"]`);
+  if (el) el.classList.add('active');
+
+  document.getElementById('btn-prev').style.display = step > 1 ? '' : 'none';
+  document.getElementById('btn-next').style.display = step < State.wizardTotal ? '' : 'none';
+  document.getElementById('btn-submit').style.display = step === State.wizardTotal ? '' : 'none';
+
+  if (step === 2 && State.postures) {
+    renderPostureOptions('opts-neck',     State.postures.neck,     'neck',     State.assessment.neck);
+    renderPostureOptions('opts-neckMod',  State.postures.neckMod,  'neckMod',  State.assessment.neckMod);
+    renderPostureOptions('opts-trunk',    State.postures.trunk,    'trunk',    State.assessment.trunk);
+    renderPostureOptions('opts-trunkMod', State.postures.trunkMod, 'trunkMod', State.assessment.trunkMod);
+    renderPostureOptions('opts-legs',     State.postures.legs,     'legs',     State.assessment.legs);
+    renderPostureOptions('opts-legsMod',  State.postures.legsMod,  'legsMod',  State.assessment.legsMod);
+  }
+  if (step === 3 && State.postures) {
+    renderPostureOptions('opts-load',      State.postures.load,      'loadScore', State.assessment.loadScore);
+    renderPostureOptions('opts-loadShock', State.postures.loadShock, 'loadShock', State.assessment.loadShock);
+    updateLivePreviews();
+  }
+  if (step === 4 && State.postures) {
+    renderPostureOptions('opts-upperArm',    State.postures.upperArm,    'upperArm',    State.assessment.upperArm);
+    renderPostureOptions('opts-upperArmMod', State.postures.upperArmMod, 'upperArmMod', State.assessment.upperArmMod);
+    renderPostureOptions('opts-lowerArm',    State.postures.lowerArm,    'lowerArm',    State.assessment.lowerArm);
+    renderPostureOptions('opts-wrist',       State.postures.wrist,       'wrist',       State.assessment.wrist);
+    renderPostureOptions('opts-wristMod',    State.postures.wristMod,    'wristMod',    State.assessment.wristMod);
+  }
+  if (step === 5 && State.postures) {
+    renderPostureOptions('opts-coupling', State.postures.coupling, 'couplingScore', State.assessment.couplingScore);
+    renderActivityChecks(State.postures);
+    updateLivePreviews();
+  }
+  if (step === 6) renderResultPanel();
+}
+
+function wizardNext() {
+  if (!collectStep(State.wizardStep)) return;
+  if (State.wizardStep < State.wizardTotal) {
+    State.wizardStep++;
+    updateStepIndicator();
+    renderWizardStep(State.wizardStep);
+  }
+}
+
+function wizardPrev() {
+  if (State.wizardStep > 1) {
+    State.wizardStep--;
+    updateStepIndicator();
+    renderWizardStep(State.wizardStep);
+  }
+}
+
+function collectStep(step) {
+  if (step === 1) {
+    const jobTask = document.getElementById('f-jobTask').value.trim();
+    if (!jobTask) { showToast('กรุณาระบุ งาน / Task', 'danger'); return false; }
+    State.assessment.jobTask        = jobTask;
+    State.assessment.department     = document.getElementById('f-department').value.trim();
+    State.assessment.workerName     = document.getElementById('f-workerName').value.trim();
+    State.assessment.assessmentDate = document.getElementById('f-assessmentDate').value;
+    State.assessment.notes          = document.getElementById('f-notes').value.trim();
+    State.assessment.imageUrls      = document.getElementById('f-imageUrls').value.trim();
+  }
+  return true;
+}
+
+function renderResultPanel() {
+  const r = clientCalcReba(State.assessment);
+  const risk = RISK_CONFIG[r.riskLevel];
+  document.getElementById('result-panel').innerHTML = `
+    <div class="row g-3 mb-3">
+      <div class="col-4"><div class="score-box">
+        <div class="score-num text-primary">${r.scoreA}</div>
+        <div class="score-label">Score A</div>
+      </div></div>
+      <div class="col-4"><div class="score-box">
+        <div class="score-num text-primary">${r.scoreB}</div>
+        <div class="score-label">Score B</div>
+      </div></div>
+      <div class="col-4"><div class="score-box">
+        <div class="score-num text-primary">${r.scoreC}</div>
+        <div class="score-label">Score C</div>
+      </div></div>
+    </div>
+    <div class="text-center p-3 rounded mb-3"
+         style="background:${risk.color}22;border:2px solid ${risk.color}">
+      <div style="font-size:3rem;font-weight:900;color:${risk.color}">${r.finalScore}</div>
+      <div class="fw-semibold" style="color:${risk.color}">${risk.label}</div>
+      <div class="text-muted small mt-1">REBA Final Score</div>
+    </div>
+    <div class="alert alert-secondary p-2">
+      <strong>คำแนะนำ:</strong> ${getActionText(r.riskLevel)}
+    </div>
+  `;
+}
+
+const ACTION_TEXT = {
+  negligible: 'ไม่จำเป็นต้องดำเนินการเพิ่มเติม',
+  low:        'อาจต้องเปลี่ยนแปลง — ติดตามต่อไป',
+  medium:     'ต้องสืบสวนและดำเนินการเร็วๆ นี้',
+  high:       'ต้องสืบสวนและดำเนินการแก้ไข',
+  very_high:  'ต้องดำเนินการแก้ไขทันที!'
+};
+function getActionText(lvl) { return ACTION_TEXT[lvl] || ''; }
+
+function wizardSaveDraft() {
+  collectStep(State.wizardStep);
+  const data = { ...State.assessment, status: 'draft' };
+  const id = document.getElementById('f-id').value;
+  if (id) data.id = id;
+  showSpinner();
+  google.script.run
+    .withSuccessHandler(r => {
+      hideSpinner();
+      document.getElementById('f-id').value = r.id;
+      showToast('บันทึก Draft สำเร็จ');
+    })
+    .withFailureHandler(err => { hideSpinner(); showToast(err.message, 'danger'); })
+    .clientSaveAssessment(data);
+}
+
+function wizardSubmit() {
+  if (!collectStep(State.wizardStep)) return;
+  const data = { ...State.assessment, status: 'submitted' };
+  const id = document.getElementById('f-id').value;
+  if (id) data.id = id;
+  showSpinner();
+  google.script.run
+    .withSuccessHandler(r => {
+      hideSpinner();
+      showToast('บันทึกการประเมินสำเร็จ!', 'success');
+      navTo('detail', { id: r.id });
+    })
+    .withFailureHandler(err => { hideSpinner(); showToast(err.message, 'danger'); })
+    .clientSaveAssessment(data);
+}
+
+// ═══════════════════════════════════════════════════════
+// Dashboard
+// ═══════════════════════════════════════════════════════
+function loadDashboard() {
+  showSpinner();
+  google.script.run
+    .withSuccessHandler(data => { hideSpinner(); renderDashboard(data); })
+    .withFailureHandler(err  => { hideSpinner(); showToast(err.message, 'danger'); })
+    .clientGetDashboard();
+}
+
+function renderDashboard(d) {
+  document.getElementById('stat-total').textContent      = d.totalAssessments;
+  document.getElementById('stat-high').textContent       = (d.riskCounts.high||0) + (d.riskCounts.very_high||0);
+  document.getElementById('stat-open-plans').textContent = (d.planStats.open||0) + (d.planStats.inProgress||0);
+  document.getElementById('stat-overdue').textContent    = d.planStats.overdue || 0;
+
+  // Risk donut
+  const riskLabels = ['ไม่มีความเสี่ยง','ต่ำ','ปานกลาง','สูง','สูงมาก'];
+  const riskColors = ['#28a745','#8bc34a','#ffc107','#fd7e14','#dc3545'];
+  const riskVals   = ['negligible','low','medium','high','very_high'].map(k => d.riskCounts[k]||0);
+  renderDonut('chart-risk', riskLabels, riskVals, riskColors);
+
+  // Trend bar
+  renderTrend('chart-trend', d.trend);
+
+  // Top jobs
+  const tje = document.getElementById('top-jobs-list');
+  tje.innerHTML = (d.topJobs || []).map(j => `
+    <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+      <span class="text-truncate me-2">${j.job}</span>
+      <span class="badge bg-secondary">${j.avgScore} avg / ${j.count} ครั้ง</span>
+    </div>
+  `).join('') || '<div class="text-muted small">ยังไม่มีข้อมูล</div>';
+
+  // Recent
+  const rle = document.getElementById('recent-list');
+  rle.innerHTML = (d.recent || []).map(a => `
+    <div class="d-flex justify-content-between align-items-center py-1 border-bottom"
+         onclick="navTo('detail',{id:'${a.id}'})" style="cursor:pointer">
+      <div>
+        <div class="fw-semibold small">${a.jobTask || '—'}</div>
+        <div class="text-muted" style="font-size:.75rem">${a.assessmentDate || ''}</div>
+      </div>
+      <span class="risk-badge risk-${a.riskLevel}">${a.finalScore}</span>
+    </div>
+  `).join('') || '<div class="text-muted small">ยังไม่มีข้อมูล</div>';
+}
+
+function renderDonut(canvasId, labels, data, colors) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  if (State.charts[canvasId]) State.charts[canvasId].destroy();
+  State.charts[canvasId] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2 }] },
+    options: { plugins: { legend: { position: 'right', labels: { boxWidth: 12 } } }, cutout: '60%' },
+  });
+}
+
+function renderTrend(canvasId, trend) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx || !trend) return;
+  if (State.charts[canvasId]) State.charts[canvasId].destroy();
+  State.charts[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: trend.map(t => t.label),
+      datasets: [
+        { label: 'จำนวนครั้ง', data: trend.map(t => t.count),    backgroundColor: '#1a73e8aa', yAxisID: 'y' },
+        { label: 'คะแนนเฉลี่ย', data: trend.map(t => t.avgScore), type: 'line', borderColor: '#dc3545',
+          backgroundColor: 'transparent', yAxisID: 'y1', tension: .3 },
+      ],
+    },
+    options: {
+      scales: {
+        y:  { position: 'left',  beginAtZero: true, ticks: { stepSize: 1 } },
+        y1: { position: 'right', min: 0, max: 15, grid: { drawOnChartArea: false } },
+      },
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// Assessment List
+// ═══════════════════════════════════════════════════════
+function loadAssessments() {
+  const search    = document.getElementById('search-input')?.value || '';
+  const riskLevel = document.getElementById('filter-risk')?.value  || '';
+  showSpinner();
+  google.script.run
+    .withSuccessHandler(rows => { hideSpinner(); renderAssessmentsTable(rows); })
+    .withFailureHandler(err  => { hideSpinner(); showToast(err.message, 'danger'); })
+    .clientGetAssessments({ search, riskLevel });
+}
+
+document.getElementById('search-input')?.addEventListener('input', debounce(loadAssessments, 400));
+document.getElementById('filter-risk')?.addEventListener('change', loadAssessments);
+
+function renderAssessmentsTable(rows) {
+  const tbody = document.getElementById('assessments-tbody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">ยังไม่มีการประเมิน</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr onclick="navTo('detail',{id:'${r.id}'})">
+      <td>${r.assessmentDate || ''}</td>
+      <td>${r.jobTask || '—'}</td>
+      <td>${r.department || '—'}</td>
+      <td class="fw-bold">${r.finalScore}</td>
+      <td><span class="risk-badge risk-${r.riskLevel}">${RISK_CONFIG[r.riskLevel]?.label||r.riskLevel}</span></td>
+      <td>
+        <span class="badge bg-secondary">${r.actionPlanCount||0} รายการ</span>
+        ${(r.openPlanCount||0)>0 ? `<span class="badge bg-warning text-dark ms-1">${r.openPlanCount} ค้าง</span>` : ''}
+      </td>
+      <td><span class="badge ${r.status==='submitted'?'bg-success':'bg-secondary'}">${r.status==='submitted'?'บันทึกแล้ว':'Draft'}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// Assessment Detail
+// ═══════════════════════════════════════════════════════
+function loadDetail(id) {
+  showSpinner();
+  google.script.run
+    .withSuccessHandler(data => { hideSpinner(); renderDetail(data); })
+    .withFailureHandler(err  => { hideSpinner(); showToast(err.message, 'danger'); })
+    .clientGetAssessment(id);
+}
+
+function renderDetail(a) {
+  if (!a) { showToast('ไม่พบข้อมูล', 'danger'); return; }
+  const r = a.calcResult || clientCalcReba(a);
+  const risk = RISK_CONFIG[r.riskLevel] || {};
+
+  let reAssessHtml = '';
+  if (a.reAssessments && a.reAssessments.length) {
+    reAssessHtml = `
+      <div class="stat-card mb-3">
+        <h6 class="mb-2">การประเมินซ้ำ (${a.reAssessments.length} ครั้ง)</h6>
+        ${a.reAssessments.map(re => `
+          <div class="d-flex justify-content-between align-items-center py-1 border-bottom"
+               onclick="navTo('detail',{id:'${re.id}'})" style="cursor:pointer">
+            <span>${re.assessmentDate || re.createdAt?.split('T')[0]}</span>
+            <span class="risk-badge risk-${re.riskLevel}">${re.finalScore} — ${RISK_CONFIG[re.riskLevel]?.label||''}</span>
+          </div>
+        `).join('')}
+      </div>`;
+  }
+
+  let parentHtml = '';
+  if (a.parentAssessment) {
+    const pa = a.parentAssessment;
+    parentHtml = `<div class="alert alert-info p-2 mb-3">
+      <small>การประเมินซ้ำของ: <a href="#" onclick="navTo('detail',{id:'${pa.id}'});return false">${pa.jobTask} (${pa.assessmentDate})</a>
+      — คะแนนเดิม: <strong>${pa.finalScore}</strong></small>
+    </div>`;
+  }
+
+  document.getElementById('detail-content').innerHTML = `
+    ${parentHtml}
+    <div class="row g-3 mb-3">
+      <div class="col-md-8">
+        <div class="stat-card">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <h5 class="mb-0">${a.jobTask || '—'}</h5>
+              <div class="text-muted small">${a.department||''} ${a.workerName?'• '+a.workerName:''}</div>
+              <div class="text-muted small">${a.assessmentDate || ''} • ประเมินโดย ${a.assessorName||a.assessorEmail}</div>
+            </div>
+            <span class="badge ${a.status==='submitted'?'bg-success':'bg-secondary'}">${a.status==='submitted'?'บันทึกแล้ว':'Draft'}</span>
+          </div>
+          <div class="row g-2 mb-3">
+            ${[['Score A',r.scoreA],['Score B',r.scoreB],['Score C',r.scoreC]].map(([l,v])=>`
+              <div class="col-4"><div class="score-box">
+                <div class="score-num">${v}</div><div class="score-label">${l}</div>
+              </div></div>`).join('')}
+          </div>
+          <div class="text-center p-3 rounded"
+               style="background:${risk.color}22;border:2px solid ${risk.color||'#ccc'}">
+            <span style="font-size:2.5rem;font-weight:900;color:${risk.color}">${r.finalScore}</span>
+            <div class="fw-semibold" style="color:${risk.color}">${risk.label}</div>
+          </div>
+          ${a.notes ? `<div class="mt-2 text-muted small"><i class="bi bi-sticky me-1"></i>${a.notes}</div>` : ''}
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="stat-card h-100">
+          <h6>คำแนะนำ (Hierarchy of Controls)</h6>
+          <div id="detail-recommendations">
+            ${renderRecommendations(r.riskLevel)}
+          </div>
+          <div class="mt-3 d-grid gap-2">
+            <button class="btn btn-outline-primary btn-sm" onclick="openPlanModal('${a.id}')">
+              <i class="bi bi-plus me-1"></i>เพิ่ม Action Plan
+            </button>
+            <button class="btn btn-outline-secondary btn-sm"
+                    onclick="navTo('new-assessment',{parentId:'${a.id}',prefill:${JSON.stringify({jobTask:a.jobTask,department:a.department,workerName:a.workerName})}})">
+              <i class="bi bi-arrow-repeat me-1"></i>ประเมินซ้ำ (Re-assessment)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0">Action Plans</h6>
+        <button class="btn btn-sm btn-outline-primary" onclick="openPlanModal('${a.id}')">
+          <i class="bi bi-plus"></i> เพิ่ม
+        </button>
+      </div>
+      <div id="detail-plans">${renderPlansList(a.actionPlans||[])}</div>
+    </div>
+
+    ${reAssessHtml}
+  `;
+}
+
+const CTRL_TYPE_LABELS = {
+  elimination:'Elimination',substitution:'Substitution',
+  engineering:'Engineering',admin:'Administrative',ppe:'PPE'
+};
+
+function renderRecommendations(riskLevel) {
+  const RECS = {
+    negligible: [{ type:'admin', text:'ตรวจสอบท่าทางการทำงานตามปกติต่อไป' }],
+    low:        [{ type:'admin', text:'พิจารณาปรับปรุงท่าทางหรือลำดับงาน' },{ type:'ppe', text:'ตรวจสอบ PPE ที่เหมาะสม' }],
+    medium:     [{ type:'engineering', text:'ปรับสภาพแวดล้อม เช่น ความสูงโต๊ะ เก้าอี้' },{ type:'admin', text:'จัดตารางพัก/สลับงาน/อบรม' }],
+    high:       [{ type:'substitution', text:'เปลี่ยนวิธีการทำงานหรืออุปกรณ์' },{ type:'engineering', text:'ติดตั้งลิฟต์ รางเลื่อน โต๊ะปรับระดับ' }],
+    very_high:  [{ type:'elimination', text:'ขจัดงานเสี่ยง หรือนำระบบอัตโนมัติมาแทน' },{ type:'substitution', text:'เปลี่ยนกระบวนการทำงานใหม่ทั้งหมด' }],
+  };
+  return (RECS[riskLevel]||[]).map(r => `
+    <div class="d-flex gap-2 mb-2">
+      <span class="badge bg-secondary" style="white-space:nowrap">${CTRL_TYPE_LABELS[r.type]||r.type}</span>
+      <span class="small">${r.text}</span>
+    </div>
+  `).join('');
+}
+
+function renderPlansList(plans) {
+  if (!plans.length) return '<div class="text-muted small">ยังไม่มี Action Plan</div>';
+  const statusBadge = { open:'bg-secondary', in_progress:'bg-warning text-dark', completed:'bg-success' };
+  const statusLabel = { open:'Open', in_progress:'In Progress', completed:'Completed' };
+  return plans.map(p => `
+    <div class="d-flex justify-content-between align-items-start py-2 border-bottom">
+      <div>
+        <div class="small fw-semibold">[${CTRL_TYPE_LABELS[p.controlType]||p.controlType}] ${p.description}</div>
+        <div class="text-muted" style="font-size:.75rem">
+          ${p.responsiblePerson?'ผู้รับผิดชอบ: '+p.responsiblePerson+' ':''}
+          ${p.dueDate?'| กำหนด: '+p.dueDate:''}
+        </div>
+      </div>
+      <div class="d-flex flex-column align-items-end gap-1 ms-2">
+        <span class="badge ${statusBadge[p.status]||'bg-secondary'}">${statusLabel[p.status]||p.status}</span>
+        ${p.status !== 'completed' ? `
+          <button class="btn btn-xs btn-outline-success" style="font-size:.7rem;padding:1px 6px"
+                  onclick="markPlanDone('${p.id}',event)">เสร็จแล้ว</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// Action Plans (global list)
+// ═══════════════════════════════════════════════════════
+function loadAllPlans() {
+  showSpinner();
+  google.script.run
+    .withSuccessHandler(rows => { hideSpinner(); renderAllPlans(rows); })
+    .withFailureHandler(err  => { hideSpinner(); showToast(err.message,'danger'); })
+    .clientGetAssessments({});
+}
+
+function renderAllPlans(assessments) {
+  const statusFilter = document.getElementById('filter-plan-status')?.value || '';
+  const tbody = document.getElementById('plans-tbody');
+  let plans = [];
+  assessments.forEach(a => {
+    // We only have counts here — load detail later per row
+    // For overview list: just show assessment-level summary
+  });
+  tbody.innerHTML = assessments.map(a => {
+    const pending = a.openPlanCount || 0;
+    if (statusFilter === 'completed' && pending > 0) return '';
+    if ((statusFilter === 'open'||statusFilter === 'in_progress') && pending === 0) return '';
+    return `
+      <tr onclick="navTo('detail',{id:'${a.id}'})">
+        <td>${a.jobTask||'—'} <div class="text-muted" style="font-size:.75rem">${a.department||''}</div></td>
+        <td>${a.actionPlanCount||0} รายการ</td>
+        <td>—</td>
+        <td>—</td>
+        <td>
+          <span class="badge bg-secondary">${a.actionPlanCount||0} ทั้งหมด</span>
+          ${pending ? `<span class="badge bg-warning text-dark ms-1">${pending} ค้าง</span>` : ''}
+        </td>
+        <td><button class="btn btn-xs btn-sm btn-outline-primary" onclick="openPlanModal('${a.id}',event)">
+          <i class="bi bi-plus"></i>
+        </button></td>
+      </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// Plan Modal
+// ═══════════════════════════════════════════════════════
+let _planModal;
+function openPlanModal(assessmentId, e) {
+  if (e) e.stopPropagation();
+  document.getElementById('pm-id').value = '';
+  document.getElementById('pm-assessmentId').value = assessmentId;
+  document.getElementById('pm-description').value = '';
+  document.getElementById('pm-responsible').value  = '';
+  document.getElementById('pm-dueDate').value      = '';
+  document.getElementById('pm-notes').value        = '';
+  document.getElementById('pm-controlType').value  = 'admin';
+  document.getElementById('planModalTitle').textContent = 'เพิ่ม Action Plan';
+  if (!_planModal) _planModal = new bootstrap.Modal(document.getElementById('planModal'));
+  _planModal.show();
+}
+
+function savePlan() {
+  const desc = document.getElementById('pm-description').value.trim();
+  if (!desc) { showToast('กรุณาระบุรายละเอียดมาตรการ','danger'); return; }
+  const data = {
+    id:                document.getElementById('pm-id').value || undefined,
+    assessmentId:      document.getElementById('pm-assessmentId').value,
+    controlType:       document.getElementById('pm-controlType').value,
+    description:       desc,
+    responsiblePerson: document.getElementById('pm-responsible').value,
+    dueDate:           document.getElementById('pm-dueDate').value,
+    notes:             document.getElementById('pm-notes').value,
+  };
+  showSpinner();
+  google.script.run
+    .withSuccessHandler(() => {
+      hideSpinner();
+      _planModal?.hide();
+      showToast('บันทึก Action Plan สำเร็จ');
+      // Refresh detail if on detail page
+      const detailContent = document.getElementById('detail-content');
+      if (detailContent.innerHTML && State.currentPage === 'detail') {
+        // Reload detail from server to refresh plan list
+      }
+    })
+    .withFailureHandler(err => { hideSpinner(); showToast(err.message,'danger'); })
+    .clientSaveActionPlan(data);
+}
+
+function markPlanDone(planId, e) {
+  e.stopPropagation();
+  showSpinner();
+  google.script.run
+    .withSuccessHandler(() => { hideSpinner(); showToast('อัปเดตสถานะสำเร็จ'); })
+    .withFailureHandler(err => { hideSpinner(); showToast(err.message,'danger'); })
+    .clientUpdatePlanStatus(planId, 'completed');
+}
+
+// ═══════════════════════════════════════════════════════
+// Utility
+// ═══════════════════════════════════════════════════════
+function showSpinner() { document.getElementById('spinner').style.display = 'flex'; }
+function hideSpinner() { document.getElementById('spinner').style.display = 'none'; }
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  const b = document.getElementById('toast-msg');
+  t.className = `toast align-items-center border-0 text-bg-${type||'success'}`;
+  b.textContent = msg;
+  bootstrap.Toast.getOrCreateInstance(t, { delay: 3000 }).show();
+}
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+// ═══════════════════════════════════════════════════════
+// Bootstrap
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Show user info
+  if (State.user) {
+    document.getElementById('user-info').textContent = State.user.name + ' (' + State.user.role + ')';
+  }
+
+  // Load postures from server once
+  google.script.run
+    .withSuccessHandler(p => {
+      State.postures = p;
+      hideSpinner();
+      loadDashboard();
+    })
+    .withFailureHandler(err => {
+      hideSpinner();
+      State.postures = {}; // fallback
+      loadDashboard();
+    })
+    .serverGetPostures();
+});
+</script>
+</body>
+</html>

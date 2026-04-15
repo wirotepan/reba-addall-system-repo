@@ -1,0 +1,13 @@
+node_modules/
+
+# clasp OAuth token — ห้าม commit เด็ดขาด
+.clasprc.json
+gas-mvp/.clasp.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.log
