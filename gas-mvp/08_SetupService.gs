@@ -45,7 +45,7 @@ const SetupService = (() => {
     _ensureAdminUser(ss);
 
     Logger.log('✅ REBA Setup complete. Spreadsheet: ' + ss.getUrl());
-    SpreadsheetApp.getUi().alert('Setup เสร็จสมบูรณ์!\n\nระบบพร้อมใช้งานแล้ว');
+    Logger.log('✅ Setup เสร็จสมบูรณ์! ระบบพร้อมใช้งานแล้ว');
   }
 
   function _createOrVerifySheet(ss, name, headers) {
