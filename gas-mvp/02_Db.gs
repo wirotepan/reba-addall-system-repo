@@ -12,12 +12,17 @@ const Db = (() => {
 
   function _ss() {
     const id = CONFIG.SPREADSHEET_ID;
-    return id ? SpreadsheetApp.openById(id) : SpreadsheetApp.getActiveSpreadsheet();
+    if (!id) throw new Error(
+      'SPREADSHEET_ID ยังไม่ได้ตั้งค่า\n' +
+      'ไปที่: GAS Editor → ⚙️ Project Settings → Script Properties\n' +
+      'เพิ่ม: SPREADSHEET_ID = <Google Sheets ID ของลูกค้า>'
+    );
+    return SpreadsheetApp.openById(id);
   }
 
   function _sheet(name) {
     const s = _ss().getSheetByName(name);
-    if (!s) throw new Error('Sheet not found: ' + name);
+    if (!s) throw new Error('Sheet not found: ' + name + ' — กรุณารัน runSetup() ก่อน');
     return s;
   }
 
