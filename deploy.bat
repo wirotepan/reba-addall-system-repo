@@ -1,2 +1,2 @@
 @echo off
-powershell -NoProfile -Command "cd '%~dp0'; node deploy.js"
+"C:\Users\wirot\.nvm\versions\node\v22.14.0\bin\node.exe" "%~dp0deploy.js"
